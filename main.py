@@ -1,8 +1,53 @@
+#!/usr/bin/env python3
+"""
+🤖 AUTOMATA THEORY TOOLKIT - CORE MODULES 🤖
+================================================================
+📚 Theory of Languages and Automata - Semester 4
+🎓 Computer Science Department
+✨ Interactive implementation of DFA, NFA, and Regex operations
+
+🔧 Core Features:
+   • Deterministic Finite Automata (DFA) simulation
+   • DFA minimization using Hopcroft's algorithm  
+   • DFA equivalence checking
+   • Regular Expression to NFA conversion
+   • NFA simulation with epsilon transitions
+
+👥 Authors: [Team of 5 Amazing Developers]
+📅 Created: 2025
+🚀 Built with Python & Mathematical Precision
+
+================================================================
+"""
+
 from collections import defaultdict, deque
 
-# ---------------- DFA ------------------
+# ===============================================================
+# 🤖 DETERMINISTIC FINITE AUTOMATA (DFA) CLASS
+# ===============================================================
 class DFA:
+    """
+    🎯 Deterministic Finite Automaton Implementation
+    
+    A DFA is a 5-tuple (Q, Σ, δ, q0, F) where:
+    - Q: finite set of states
+    - Σ: finite alphabet 
+    - δ: transition function Q × Σ → Q
+    - q0: initial state
+    - F: set of accept states
+    """
+    
     def __init__(self, states, alphabet, start_state, accept_states, transitions):
+        """
+        🔧 Initialize DFA with given parameters
+        
+        Args:
+            states: List of state names
+            alphabet: List of input symbols
+            start_state: Initial state name
+            accept_states: List of accepting state names  
+            transitions: Dict mapping (state, symbol) to next state
+        """
         self.states = set(states)
         self.alphabet = set(alphabet)
         self.start_state = start_state
@@ -10,6 +55,15 @@ class DFA:
         self.transitions = transitions  # dict[state][symbol] = state
 
     def simulate(self, input_str):
+        """
+        🔄 Simulate DFA execution on input string
+        
+        Args:
+            input_str: String to process
+            
+        Returns:
+            bool: True if string is accepted, False otherwise
+        """
         current = self.start_state
         for symbol in input_str:
             if symbol not in self.alphabet:
@@ -20,7 +74,13 @@ class DFA:
         return current in self.accept_states
 
     def minimize(self):
-        # Hopcroft's Algorithm
+        """
+        ⚡ Minimize DFA using Hopcroft's Algorithm
+        
+        Returns:
+            DFA: Minimized equivalent DFA
+        """
+        # Hopcroft's Algorithm - O(n log n) complexity
         partition = [self.accept_states, self.states - self.accept_states]
         waiting = deque(partition)
 
@@ -55,13 +115,24 @@ class DFA:
                 dest = self.transitions.get(state, {}).get(c)
                 if dest:
                     new_transitions[new_state][c] = state_map[dest]
-
         new_start = state_map[self.start_state]
         new_accept = {state_map[s] for s in self.accept_states}
-
+        
         return DFA(new_states, self.alphabet, new_start, new_accept, new_transitions)
 
     def is_equivalent(self, other):
+        """
+        ⚖️ Check if this DFA is equivalent to another DFA
+        
+        Two DFAs are equivalent if they accept the same language.
+        Uses BFS to explore the product automaton.
+        
+        Args:
+            other: Another DFA to compare with
+            
+        Returns:
+            bool: True if DFAs are equivalent, False otherwise
+        """
         # Check if symmetric difference is empty using BFS
         visited = set()
         queue = deque([(self.start_state, other.start_state)])
@@ -81,20 +152,51 @@ class DFA:
                     queue.append((t1, t2))
         return True
 
-# ---------------- NFA and Regex to NFA ------------------
+# ===============================================================
+# 🎲 NON-DETERMINISTIC FINITE AUTOMATA (NFA) CLASS  
+# ===============================================================
 class NFA:
+    """
+    🎲 Non-deterministic Finite Automaton Implementation
+    
+    An NFA allows:
+    - Multiple transitions for the same input symbol
+    - Epsilon (empty string) transitions
+    - Non-deterministic choices during computation
+    """
+    
     def __init__(self):
+        """🔧 Initialize empty NFA"""
         self.transitions = defaultdict(lambda: defaultdict(set))
         self.start_state = None
         self.accept_states = set()
         self.states = set()
 
     def add_transition(self, src, symbol, dest):
+        """
+        ➕ Add transition to NFA
+        
+        Args:
+            src: Source state
+            symbol: Input symbol (or "" for epsilon)
+            dest: Destination state
+        """
         self.transitions[src][symbol].add(dest)
         self.states.update({src, dest})
 
     def simulate(self, string):
+        """
+        🔄 Simulate NFA execution using epsilon closure
+        
+        Args:
+            string: Input string to process
+            
+        Returns:
+            bool: True if string is accepted, False otherwise
+        """
+        
         def epsilon_closure(states):
+            """🔄 Compute epsilon closure of given states"""
             stack = list(states)
             closure = set(states)
             while stack:
@@ -113,7 +215,26 @@ class NFA:
             current_states = epsilon_closure(next_states)
         return bool(self.accept_states & current_states)
 
+# ===============================================================
+# 🔤 REGULAR EXPRESSION TO NFA CONVERSION
+# ===============================================================
+
 def regex_to_nfa(regex):
+    """
+    🔤 Convert Regular Expression to NFA using Thompson's Construction
+    
+    Supported operations:
+    - Basic symbols: a, b, c, ...
+    - Union: |
+    - Kleene star: *
+    - Grouping: ()
+    
+    Args:
+        regex: Regular expression string
+        
+    Returns:
+        NFA: Equivalent non-deterministic finite automaton
+    """
     state_id = [0]
 
     def new_state():
@@ -185,7 +306,21 @@ def regex_to_nfa(regex):
     try:
         nfa, _ = parse_regex(regex)
         if not nfa.start_state:
-            raise ValueError("Invalid regex: no start state defined")
+            raise ValueError("Invalid regex: no start state defined")        
         return nfa
     except ValueError as e:
         raise ValueError(f"Regex parsing error: {str(e)}")
+
+# ===============================================================
+# 🎉 END OF AUTOMATA THEORY TOOLKIT CORE MODULES
+# ===============================================================
+"""
+✨ Thank you for using our Automata Theory Toolkit! ✨
+
+This implementation provides a solid foundation for:
+• Understanding finite automata concepts
+• Learning computational theory
+• Implementing language recognition algorithms
+
+🚀 Built with passion for Computer Science education! 🚀
+"""
