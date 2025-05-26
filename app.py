@@ -294,7 +294,7 @@ def regex_to_nfa_tab():
     st.markdown('<h2 style="text-align: center; color: #96CEB4;">Regex to NFA Conversion</h2>', unsafe_allow_html=True)
     
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #96CEB4 0%, #FFECD2 100%); padding: 15px; border-radius: 10px; margin: 10px 0;">
+    <div class="bg-blue-500 mt-5 p-3">
         <h4>📝 Supported Regex Operations:</h4>
         <ul>
             <li><strong>a, b</strong> - Basic symbols</li>
