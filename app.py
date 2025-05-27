@@ -1,4 +1,6 @@
 import streamlit as st
+from PIL import Image
+import os
 import json
 from main import DFA, regex_to_nfa
 
@@ -269,25 +271,26 @@ def dfa_minimizer_tab():
         with st.spinner('🔄 Minimizing DFA...'):
             minimized = dfa.minimize()
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### 📉 **Minimized DFA Result**")
-                st.json({
-                    "states": list(minimized.states),
-                    "start_state": minimized.start_state,
-                    "accept_states": list(minimized.accept_states),
-                    "transitions": minimized.transitions
-                })
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("### 📉 **Minimized DFA Result**")
+            st.json({
+                "states": list(minimized.states),
+                "start_state": minimized.start_state,
+                "accept_states": list(minimized.accept_states),
+                "transitions": minimized.transitions
+            })
+        
+        with col2:
+            st.markdown("### 📈 **Optimization Stats**")
+            original_states = len(dfa.states)
+            minimized_states = len(minimized.states)
+            reduction = ((original_states - minimized_states) / original_states * 100) if original_states > 0 else 0
             
-            with col2:
-                st.markdown("### 📈 **Optimization Stats**")
-                original_states = len(dfa.states)
-                minimized_states = len(minimized.states)
-                reduction = ((original_states - minimized_states) / original_states * 100) if original_states > 0 else 0
-                
-                st.metric("Original States", original_states)
-                st.metric("Minimized States", minimized_states)
-                st.metric("Reduction", f"{reduction:.1f}%", f"-{original_states - minimized_states}")
+            st.metric("Original States", original_states)
+            st.metric("Minimized States", minimized_states)
+            st.metric("Reduction", f"{reduction:.1f}%", f"-{original_states - minimized_states}")
 
 def regex_to_nfa_tab():
     st.markdown('<div class="logo-container">🔤</div>', unsafe_allow_html=True)
@@ -343,11 +346,33 @@ def dfa_equivalence_tab():
 
     st.markdown("### 🤖 Configure First DFA")
     dfa1 = input_dfa(index=1)
+
+    if dfa1:
+        try:
+            visual_dfa = dfa1.to_visual_dfa()
+            image_path = "dfa_diagram.png"
+            visual_dfa.show_diagram(path=image_path)
+
+            st.markdown("### 🗺️ DFA Diagram")
+            st.image(Image.open(image_path), caption="Visualized DFA", use_column_width=True)
+        except Exception as e:
+            st.warning(f"⚠️ Cannot render DFA diagram: {e}")
     
     st.markdown("---")
     st.markdown("### 🤖 Configure Second DFA") 
     dfa2 = input_dfa(index=2)
     
+    if dfa2:
+        try:
+            visual_dfa = dfa2.to_visual_dfa()
+            image_path = "dfa_diagram.png"
+            visual_dfa.show_diagram(path=image_path)
+
+            st.markdown("### 🗺️ DFA Diagram")
+            st.image(Image.open(image_path), caption="Visualized DFA", use_column_width=True)
+        except Exception as e:
+            st.warning(f"⚠️ Cannot render DFA diagram: {e}")
+
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     

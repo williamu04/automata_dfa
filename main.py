@@ -151,6 +151,23 @@ class DFA:
                 if t1 is not None and t2 is not None:
                     queue.append((t1, t2))
         return True
+    
+    def to_visual_dfa(self):
+        from visual_automata.fa.dfa import DFA as VisualDFA
+
+        formatted_transitions = {}
+        for state in self.transitions:
+            for symbol in self.transitions[state]:
+                formatted_transitions[(state, symbol)] = self.transitions[state][symbol]
+
+        return VisualDFA(
+            states=self.states,
+            input_symbols=self.alphabet,
+            transitions=formatted_transitions,
+            initial_state=self.start_state,
+            final_states=self.accept_states
+        )
+
 
 # ===============================================================
 # 🎲 NON-DETERMINISTIC FINITE AUTOMATA (NFA) CLASS  
@@ -214,6 +231,40 @@ class NFA:
                 next_states.update(self.transitions[state].get(symbol, []))
             current_states = epsilon_closure(next_states)
         return bool(self.accept_states & current_states)
+    
+    def to_dict(self):
+        return {
+            "states": list(self.states),
+            "alphabet": sorted({symb for trans in self.transitions.values() for symb in trans if symb != ""}),
+            "start_state": self.start_state,
+            "accept_states": list(self.accept_states),
+            "transitions": {
+                state: {symbol: list(dests) for symbol, dests in self.transitions[state].items()}
+                for state in self.transitions
+            }
+        }
+    
+    def to_visual_nfa(self):
+        from visual_automata.fa.nfa import NFA as VisualNFA
+
+        formatted_transitions = {}
+        for state in self.transitions:
+            for symbol in self.transitions[state]:
+                formatted_transitions.setdefault(state, {}).setdefault(symbol, set()).update(self.transitions[state][symbol])
+
+        # visual-automata membutuhkan input_symbols yang eksplisit
+        input_symbols = set()
+        for state in self.transitions:
+            input_symbols.update(symbol for symbol in self.transitions[state] if symbol != "")
+
+        return VisualNFA(
+            states=self.states,
+            input_symbols=input_symbols,
+            transitions=formatted_transitions,
+            initial_state=self.start_state,
+            final_states=self.accept_states
+        )
+
 
 # ===============================================================
 # 🔤 REGULAR EXPRESSION TO NFA CONVERSION
