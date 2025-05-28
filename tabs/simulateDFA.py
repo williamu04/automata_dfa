@@ -42,11 +42,7 @@ def simulate_dfa():
         with st.expander("🔄 **DFA State Diagram**", expanded=True):
             # Visual graph representation
             st.markdown("#### State Diagram (Graph)")
-            graph = render_dfa(dfa_visual)
-            if graph:
-                st.graphviz_chart(graph)
-            else:
-                st.info("🖼️ Graph visualization requires Graphviz package. Please install with `pip install graphviz` and ensure Graphviz software is installed.")
+            render_dfa(dfa_visual)
             
             # Display transition table
             st.markdown("#### Transition Table")

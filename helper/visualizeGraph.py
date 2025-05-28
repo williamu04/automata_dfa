@@ -1,80 +1,65 @@
+import streamlit as st
 import graphviz
-HAS_GRAPHVIZ = True
 
 def render_dfa(dfa_visual):
     """
-    Generate a graphviz visualization of DFA structure
+    Render DFA graph using Streamlit's graphviz_chart.
     
     Args:
         dfa_visual: Visual representation of DFA from get_visual_representation()
         
-    Returns:
-        graphviz.Digraph: Graph visualization of the DFA, or None if graphviz not available
+    Displays:
+        A rendered graphviz chart in the Streamlit app.
     """
-    if not HAS_GRAPHVIZ:
-        return None
-        
-    # Create a new directed graph
-    graph = graphviz.Digraph()
-    graph.attr(rankdir='LR')  # Left to right layout
-    
-    # Add states (nodes)
+    dot = graphviz.Digraph()
+    dot.attr(rankdir='LR')
+
+    # Add states
     for state in dfa_visual["states"]:
-        if state in dfa_visual["accept_states"]:
-            # Double circle for accept states
-            graph.node(state, shape='doublecircle')
-        else:
-            # Single circle for non-accept states
-            graph.node(state, shape='circle')
+        shape = 'doublecircle' if state in dfa_visual["accept_states"] else 'circle'
+        dot.node(state, shape=shape)
     
-    # Add a special node for the start state indicator
-    graph.node('start', shape='none', label='')
-    graph.edge('start', dfa_visual["start_state"])
-    
-    # Add transitions (edges)
-    for src in dfa_visual["transitions"]:
-        for symbol, dest in dfa_visual["transitions"][src].items():
-            graph.edge(src, dest, label=symbol)
-    
-    return graph
+    # Add invisible start arrow
+    dot.node('start', shape='none', label='')
+    dot.edge('start', dfa_visual["start_state"])
+
+    # Add transitions
+    for src, edges in dfa_visual["transitions"].items():
+        for symbol, dest in edges.items():
+            dot.edge(src, dest, label=symbol)
+
+    # Display using Streamlit
+    st.graphviz_chart(dot)
 
 
-# ===================== HELPER FUNCTIONS =====================
 def render_nfa(nfa_visual):
     """
-    Generate a graphviz visualization of NFA structure
+    Render NFA graph using Streamlit's graphviz_chart.
     
     Args:
         nfa_visual: Visual representation of NFA from get_visual_representation()
         
-    Returns:
-        graphviz.Digraph: Graph visualization of the NFA, or None if graphviz not available
+    Displays:
+        A rendered graphviz chart in the Streamlit app.
     """
-    if not HAS_GRAPHVIZ:
-        return None
-        
-    # Create a new directed graph
-    graph = graphviz.Digraph()
-    graph.attr(rankdir='LR')  # Left to right layout
-    
-    # Add states (nodes)
+    dot = graphviz.Digraph()
+    dot.attr(rankdir='LR')
+
+    # Add states
     for state in nfa_visual["states"]:
-        if state in nfa_visual["accept_states"]:
-            # Double circle for accept states
-            graph.node(state, shape='doublecircle')
-        else:
-            # Single circle for non-accept states
-            graph.node(state, shape='circle')
-    
-    # Add a special node for the start state indicator
-    graph.node('start', shape='none', label='')
-    graph.edge('start', nfa_visual["start_state"])
-    
-    # Add transitions (edges)
-    for src in nfa_visual["transitions"]:
-        for symbol, destinations in nfa_visual["transitions"][src].items():
+        shape = 'doublecircle' if state in nfa_visual["accept_states"] else 'circle'
+        dot.node(state, shape=shape)
+
+    # Add invisible start arrow
+    dot.node('start', shape='none', label='')
+    dot.edge('start', nfa_visual["start_state"])
+
+    # Add transitions
+    for src, transitions in nfa_visual["transitions"].items():
+        for symbol, dests in transitions.items():
             symbol_display = 'ε' if symbol == "" else symbol
-            for dest in destinations:
-                graph.edge(src, dest, label=symbol_display)
-    
-    return graph
+            for dest in dests:
+                dot.edge(src, dest, label=symbol_display)
+
+    # Display using Streamlit
+    st.graphviz_chart(dot)

@@ -67,12 +67,8 @@ def simulate_nfa():
                 with st.expander("🔄 **NFA State Diagram**", expanded=True):
                     # Visual graph representation
                     st.markdown("#### State Diagram (Graph)")
-                    graph = render_nfa(nfa_visual)
-                    if graph:
-                        st.graphviz_chart(graph)
-                    else:
-                        st.info("🖼️ Graph visualization requires Graphviz package. Please install with `pip install graphviz` and ensure Graphviz software is installed.")
-                    
+                    render_nfa(nfa_visual)
+
                     # Display transition table
                     st.markdown("#### Transition Table")
                     

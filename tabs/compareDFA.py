@@ -56,11 +56,7 @@ def compare_dfa():
                 st.metric("Accept States", len(vis1["accept_states"]))
                 st.metric("Complete DFA", "Yes" if vis1["is_complete"] else "No")
 
-                graph1 = render_dfa(vis1)
-                if graph1:
-                    st.graphviz_chart(graph1)
-                else:
-                    st.info("Graphviz not available for DFA 1.")
+                render_dfa(vis1)
 
                 st.markdown("##### 🔄 Transition Table DFA 1")
                 render_table(vis1)
@@ -71,11 +67,7 @@ def compare_dfa():
                 st.metric("Accept States", len(vis2["accept_states"]))
                 st.metric("Complete DFA", "Yes" if vis2["is_complete"] else "No")
 
-                graph2 = render_dfa(vis2)
-                if graph2:
-                    st.graphviz_chart(graph2)
-                else:
-                    st.info("Graphviz not available for DFA 2.")
+                render_dfa(vis2)
 
                 st.markdown("##### 🔄 Transition Table DFA 2")
                 render_table(vis2)

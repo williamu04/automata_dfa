@@ -34,27 +34,19 @@ def minimize_dfa():
                 st.markdown("### 🧾 Original DFA")
                 st.metric("States", len(dfa.states))
                 st.metric("Accept States", len(dfa.accept_states))
-                graph1 = render_dfa(vis1)
-                if graph1:
-                    st.graphviz_chart(graph1)
-                else:
-                    st.info("Graphviz not available for Original DFA.")
+                render_dfa(vis1)
 
             with col2:
                 st.markdown("### ✨ Minimized DFA")
                 st.metric("States", len(minimized.states))
                 st.metric("Accept States", len(minimized.accept_states))
-                graph2 = render_dfa(vis2)
-                if graph2:
-                    st.graphviz_chart(graph2)
-                    st.json({
+                render_dfa(vis2)
+                st.json({
                     "states": list(minimized.states),
                     "start_state": minimized.start_state,
                     "accept_states": list(minimized.accept_states),
                     "transitions": minimized.transitions
                 })
-                else:
-                    st.info("Graphviz not available for Minimized DFA.")
 
             st.markdown("---")
             st.markdown("### 📈 Optimization Summary")
