@@ -34,7 +34,7 @@
 | 1️⃣  | **Nama Author 1**            |  123456789 | Project Lead & Backend Dev | [@author1](https://github.com/author1)       | author1@email.com            |
 | 2️⃣  | **Nama Author 2**            | 123456790 | Frontend Dev & UI/UX       | [@author2](https://github.com/author2)       | author2@email.com            |
 | 3️⃣  | **Dunhill William Putra**    | L0123045  | Algorithm Specialist       | [@williamu04](https://github.com/williamu04) | author3@email.com            |
-| 4️⃣  | **Havizhan Rhaiya Ardhana**  | L0123063 | Testing & Documentation    | [@author4](https://github.com/Havizhan)       | havizhanrhaiya@student.uns.ac.id            |
+| 4️⃣  | **Havizhan Rhaiya Ardhana**  | 123456792 | Testing & Documentation    | [@author4](https://github.com/Havizhan)       | havizhanrhaiya@student.uns.ac.id            |
 | 5️⃣  | **Ivan Wahyu Nugroho**       | L0123068  | Front End                  | [@ifwhy](https://github.com/ifwhy)           | ifanugrh02@student.uns.ac.id |
 
 ## 🚀 Cara Memulai
@@ -43,7 +43,7 @@
 
 ```sh
 pip install -r requirements.txt
-```
+```No code was selected, and there is no code to improve.
 
 ### 🌐 Jalankan Aplikasi Web
 

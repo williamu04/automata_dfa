@@ -1,6 +1,9 @@
 import streamlit as st
-import json
-from main import DFA, regex_to_nfa
+from tabs.simulateDFA import simulate_dfa
+from tabs.simulateNFA import simulate_nfa
+from tabs.minimizeDFA import minimize_dfa
+from tabs.compareDFA import compare_dfa
+
 
 # ===================== PAGE CONFIG & STYLING =====================
 st.set_page_config(
@@ -62,6 +65,8 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
 
 # ===================== HEADER & LOGO =====================
 def show_header():
@@ -128,11 +133,11 @@ def authors_page():
             "avatar": "🧑‍🔬",
         },
         {
-            "name": "Nama Author 4",
-            "nim": "123456792",
+            "name": "Havizhan Rhaiya Ardhana",
+            "nim": "L0123063",
             "role": "🧪 Testing & Documentation", 
-            "github": "author4",
-            "email": "author4@email.com",
+            "github": "Havizhan",
+            "email": "havizhanrhaiya@student.uns.ac.id",
             "avatar": "👨‍🔧",
         },
         {
@@ -179,202 +184,6 @@ def authors_page():
     </div>
     """, unsafe_allow_html=True)
 
-# ===================== DFA INPUT FUNCTIONS =====================
-def input_dfa(index=1):
-    st.markdown(f"""
-    <div class="feature-card">
-        <h3>⚙️ DFA Configuration #{index}</h3>
-        <p>Configure your Deterministic Finite Automaton below</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        states = st.text_input(f"🔘 States (comma-separated)", "q0,q1", key=f"states_{index}")
-        alphabet = st.text_input(f"🔤 Alphabet (comma-separated)", "a,b", key=f"alphabet_{index}")
-    
-    with col2:
-        start_state = st.text_input(f"▶️ Start State", "q0", key=f"start_{index}")
-        accept_states = st.text_input(f"✅ Accept States (comma-separated)", "q1", key=f"accept_{index}")
-    
-    st.markdown("**🔄 Transition Function (JSON format):**")
-    transitions_json = st.text_area(
-        f"Define transitions for DFA {index}", 
-        '{\n  "q0": {"a": "q1", "b": "q0"},\n  "q1": {"a": "q1", "b": "q0"}\n}',
-        height=150,
-        key=f"transitions_{index}"
-    )
-    
-    try:
-        transitions = json.loads(transitions_json)
-        dfa = DFA(
-            states=[s.strip() for s in states.split(",")],
-            alphabet=[s.strip() for s in alphabet.split(",")],
-            start_state=start_state.strip(),
-            accept_states=[s.strip() for s in accept_states.split(",")],
-            transitions=transitions
-        )
-        st.success(f"✅ DFA {index} configured successfully!")
-        return dfa
-    except Exception as e:
-        st.error(f"❌ Error parsing DFA {index}: {e}")
-        return None
-
-# ===================== TAB FUNCTIONS =====================
-def dfa_simulator_tab():
-    st.markdown('<div class="logo-container">🔁</div>', unsafe_allow_html=True)
-    st.markdown('<h2 style="text-align: center; color: #4ECDC4;">DFA String Testing</h2>', unsafe_allow_html=True)
-    
-    dfa = input_dfa(index=1)
-    
-    st.markdown("---")
-    st.markdown("### 🧪 Test Your String")
-    
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        test_string = st.text_input("🔤 Enter string to test", "", placeholder="Enter your test string here...")
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        test_button = st.button("🚀 Run Simulation", type="primary", use_container_width=True)
-    
-    if test_button and dfa and test_string is not None:
-        with st.spinner('🔄 Running DFA simulation...'):
-            result = dfa.simulate(test_string)
-            if result:
-                st.balloons()
-                st.success(f"🎉 **ACCEPTED!** String '{test_string}' is accepted by the DFA")
-            else:
-                st.error(f"❌ **REJECTED!** String '{test_string}' is not accepted by the DFA")
-
-def dfa_minimizer_tab():
-    st.markdown('<div class="logo-container">🔽</div>', unsafe_allow_html=True)
-    st.markdown('<h2 style="text-align: center; color: #FF6B6B;">DFA Minimization</h2>', unsafe_allow_html=True)
-    
-    dfa = input_dfa(index=1)
-
-    st.markdown("---")
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.markdown("### 📊 Original DFA")
-        if dfa:
-            st.info(f"States: {len(dfa.states)}")
-    
-    with col2:
-        st.markdown("### ⚡ Actions")
-        minimize_button = st.button("🔧 Minimize DFA", type="primary", use_container_width=True)
-
-    if minimize_button and dfa:
-        with st.spinner('🔄 Minimizing DFA...'):
-            minimized = dfa.minimize()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("### 📉 **Minimized DFA Result**")
-                st.json({
-                    "states": list(minimized.states),
-                    "start_state": minimized.start_state,
-                    "accept_states": list(minimized.accept_states),
-                    "transitions": minimized.transitions
-                })
-            
-            with col2:
-                st.markdown("### 📈 **Optimization Stats**")
-                original_states = len(dfa.states)
-                minimized_states = len(minimized.states)
-                reduction = ((original_states - minimized_states) / original_states * 100) if original_states > 0 else 0
-                
-                st.metric("Original States", original_states)
-                st.metric("Minimized States", minimized_states)
-                st.metric("Reduction", f"{reduction:.1f}%", f"-{original_states - minimized_states}")
-
-def regex_to_nfa_tab():
-    st.markdown('<div class="logo-container">🔤</div>', unsafe_allow_html=True)
-    st.markdown('<h2 style="text-align: center; color: #96CEB4;">Regex to NFA Conversion</h2>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="bg-blue-500 mt-5 p-3">
-        <h4>📝 Supported Regex Operations:</h4>
-        <ul>
-            <li><strong>a, b</strong> - Basic symbols</li>
-            <li><strong>|</strong> - Union (OR operation)</li>
-            <li><strong>*</strong> - Kleene star (zero or more)</li>
-            <li><strong>()</strong> - Grouping</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        regex = st.text_input("🎯 Enter Regular Expression", "a(b|a)*", placeholder="Example: a(b|a)*")
-        test_string = st.text_input("🧪 Enter test string", "", placeholder="Enter string to test against regex")
-    
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        convert_button = st.button("🔄 Convert & Test", type="primary", use_container_width=True)
-
-    if convert_button and regex:
-        try:
-            with st.spinner('🔄 Converting regex to NFA and testing...'):
-                nfa = regex_to_nfa(regex)
-                result = nfa.simulate(test_string)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("### ✅ **Conversion Successful!**")
-                    st.success(f"Regex '{regex}' successfully converted to NFA")
-                
-                with col2:
-                    st.markdown("### 🧪 **Test Result**")
-                    if result:
-                        st.balloons()
-                        st.success(f"🎉 **ACCEPTED!** String '{test_string}' matches the regex")
-                    else:
-                        st.error(f"❌ **REJECTED!** String '{test_string}' does not match the regex")
-                        
-        except Exception as e:
-            st.error(f"❌ **Regex parsing failed:** {e}")
-
-def dfa_equivalence_tab():
-    st.markdown('<div class="logo-container">⚖️</div>', unsafe_allow_html=True)
-    st.markdown('<h2 style="text-align: center; color: #764ba2;">DFA Equivalence Checker</h2>', unsafe_allow_html=True)
-
-    st.markdown("### 🤖 Configure First DFA")
-    dfa1 = input_dfa(index=1)
-    
-    st.markdown("---")
-    st.markdown("### 🤖 Configure Second DFA") 
-    dfa2 = input_dfa(index=2)
-    
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        compare_button = st.button("⚖️ Compare DFAs", type="primary", use_container_width=True)
-
-    if compare_button and dfa1 and dfa2:
-        with st.spinner('🔄 Comparing DFAs for equivalence...'):
-            equivalent = dfa1.is_equivalent(dfa2)
-            
-            if equivalent:
-                st.balloons()
-                st.success("🎉 **EQUIVALENT!** Both DFAs accept the same language")
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%); padding: 20px; border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
-                    <h3>✅ DFAs are Equivalent!</h3>
-                    <p>The two DFAs recognize exactly the same set of strings.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.error("❌ **NOT EQUIVALENT!** The DFAs accept different languages")
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); padding: 20px; border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
-                    <h3>❌ DFAs are Not Equivalent!</h3>
-                    <p>The two DFAs recognize different sets of strings.</p>
-                </div>
-                """, unsafe_allow_html=True)
 
 # ===================== MAIN APPLICATION =====================
 def main():
@@ -415,13 +224,13 @@ def main():
     if tab == "🏠 Home":
         home_page()
     elif tab == "🔁 DFA String Testing":
-        dfa_simulator_tab()
+        simulate_dfa()
     elif tab == "🔤 Regex to NFA":
-        regex_to_nfa_tab()
+        simulate_nfa()
     elif tab == "🔽 DFA Minimization":
-        dfa_minimizer_tab()
+        minimize_dfa()
     elif tab == "⚖️ DFA Equivalence":
-        dfa_equivalence_tab()
+        compare_dfa()
     elif tab == "👥 Meet the Team":
         authors_page()
 
