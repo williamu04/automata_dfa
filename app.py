@@ -2,6 +2,14 @@ import streamlit as st
 import json
 from main import DFA, regex_to_nfa
 
+# Try to import graphviz, but gracefully handle if not installed
+try:
+    import graphviz
+    HAS_GRAPHVIZ = True
+except ImportError:
+    HAS_GRAPHVIZ = False
+    st.warning("📋 Graphviz package is not installed. Graph visualization will not be available. Install with: `pip install graphviz`")
+
 # ===================== PAGE CONFIG & STYLING =====================
 st.set_page_config(
     page_title="🤖 Automata Theory Toolkit", 
@@ -62,6 +70,83 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# ===================== HELPER FUNCTIONS =====================
+def visualize_nfa(nfa_visual):
+    """
+    Generate a graphviz visualization of NFA structure
+    
+    Args:
+        nfa_visual: Visual representation of NFA from get_visual_representation()
+        
+    Returns:
+        graphviz.Digraph: Graph visualization of the NFA, or None if graphviz not available
+    """
+    if not HAS_GRAPHVIZ:
+        return None
+        
+    # Create a new directed graph
+    graph = graphviz.Digraph()
+    graph.attr(rankdir='LR')  # Left to right layout
+    
+    # Add states (nodes)
+    for state in nfa_visual["states"]:
+        if state in nfa_visual["accept_states"]:
+            # Double circle for accept states
+            graph.node(state, shape='doublecircle')
+        else:
+            # Single circle for non-accept states
+            graph.node(state, shape='circle')
+    
+    # Add a special node for the start state indicator
+    graph.node('start', shape='none', label='')
+    graph.edge('start', nfa_visual["start_state"])
+    
+    # Add transitions (edges)
+    for src in nfa_visual["transitions"]:
+        for symbol, destinations in nfa_visual["transitions"][src].items():
+            symbol_display = 'ε' if symbol == "" else symbol
+            for dest in destinations:
+                graph.edge(src, dest, label=symbol_display)
+    
+    return graph
+
+def visualize_dfa(dfa_visual):
+    """
+    Generate a graphviz visualization of DFA structure
+    
+    Args:
+        dfa_visual: Visual representation of DFA from get_visual_representation()
+        
+    Returns:
+        graphviz.Digraph: Graph visualization of the DFA, or None if graphviz not available
+    """
+    if not HAS_GRAPHVIZ:
+        return None
+        
+    # Create a new directed graph
+    graph = graphviz.Digraph()
+    graph.attr(rankdir='LR')  # Left to right layout
+    
+    # Add states (nodes)
+    for state in dfa_visual["states"]:
+        if state in dfa_visual["accept_states"]:
+            # Double circle for accept states
+            graph.node(state, shape='doublecircle')
+        else:
+            # Single circle for non-accept states
+            graph.node(state, shape='circle')
+    
+    # Add a special node for the start state indicator
+    graph.node('start', shape='none', label='')
+    graph.edge('start', dfa_visual["start_state"])
+    
+    # Add transitions (edges)
+    for src in dfa_visual["transitions"]:
+        for symbol, dest in dfa_visual["transitions"][src].items():
+            graph.edge(src, dest, label=symbol)
+    
+    return graph
 
 # ===================== HEADER & LOGO =====================
 def show_header():
@@ -128,11 +213,11 @@ def authors_page():
             "avatar": "🧑‍🔬",
         },
         {
-            "name": "Nama Author 4",
-            "nim": "123456792",
+            "name": "Havizhan Rhaiya Ardhana",
+            "nim": "L0123063",
             "role": "🧪 Testing & Documentation", 
-            "github": "author4",
-            "email": "author4@email.com",
+            "github": "Havizhan",
+            "email": "havizhanrhaiya@student.uns.ac.id",
             "avatar": "👨‍🔧",
         },
         {
@@ -238,6 +323,63 @@ def dfa_simulator_tab():
         st.markdown("<br>", unsafe_allow_html=True)
         test_button = st.button("🚀 Run Simulation", type="primary", use_container_width=True)
     
+    if dfa:
+        # Visualize the DFA structure
+        st.markdown("---")
+        st.markdown("### 🔍 **DFA Structure Visualization**")
+        
+        # Get DFA visual representation
+        dfa_visual = dfa.get_visual_representation()
+        
+        # Display DFA statistics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total States", dfa_visual["num_states"])
+        with col2:
+            st.metric("Accept States", len(dfa_visual["accept_states"]))
+        with col3:
+            st.metric("Complete DFA", "Yes" if dfa_visual["is_complete"] else "No")
+        
+        # Display DFA details
+        with st.expander("🔄 **DFA State Diagram**", expanded=True):
+            # Visual graph representation
+            st.markdown("#### State Diagram (Graph)")
+            graph = visualize_dfa(dfa_visual)
+            if graph:
+                st.graphviz_chart(graph)
+            else:
+                st.info("🖼️ Graph visualization requires Graphviz package. Please install with `pip install graphviz` and ensure Graphviz software is installed.")
+            
+            # Display transition table
+            st.markdown("#### Transition Table")
+            
+            # Create header row with state and all alphabet symbols
+            table_header = ["State"] + list(dfa_visual["alphabet"]) + ["Accept State?"]
+            table_rows = []
+            
+            # Create rows for each state
+            for state in sorted(dfa_visual["states"]):
+                row = [f"**{state}**" + (" (start)" if state == dfa_visual["start_state"] else "")]
+                
+                # Add columns for each alphabet symbol
+                for symbol in sorted(dfa_visual["alphabet"]):
+                    dest_state = dfa_visual["transitions"].get(state, {}).get(symbol, "∅")
+                    row.append(dest_state)
+                
+                # Is it an accept state?
+                row.append("✓" if state in dfa_visual["accept_states"] else "✗")
+                
+                table_rows.append(row)
+            
+            # Convert to markdown table
+            table_md = "| " + " | ".join(table_header) + " |\n"
+            table_md += "| " + " | ".join(["---"] * len(table_header)) + " |\n"
+            
+            for row in table_rows:
+                table_md += "| " + " | ".join(map(str, row)) + " |\n"
+            
+            st.markdown(table_md)
+    
     if test_button and dfa and test_string is not None:
         with st.spinner('🔄 Running DFA simulation...'):
             result = dfa.simulate(test_string)
@@ -333,9 +475,93 @@ def regex_to_nfa_tab():
                         st.success(f"🎉 **ACCEPTED!** String '{test_string}' matches the regex")
                     else:
                         st.error(f"❌ **REJECTED!** String '{test_string}' does not match the regex")
+                
+                # Visualize the NFA
+                st.markdown("---")
+                st.markdown("### 🔍 **NFA Structure Visualization**")
+                
+                # Get NFA visual representation
+                nfa_visual = nfa.get_visual_representation()
+                
+                # Display NFA statistics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total States", nfa_visual["num_states"])
+                with col2:
+                    st.metric("Alphabet Size", len(nfa_visual["alphabet"]))
+                with col3:
+                    st.metric("Has ε-transitions", "Yes" if nfa_visual["has_epsilon"] else "No")
+                
+                # Display NFA details
+                with st.expander("🔄 **NFA State Diagram**", expanded=True):
+                    # Visual graph representation
+                    st.markdown("#### State Diagram (Graph)")
+                    graph = visualize_nfa(nfa_visual)
+                    if graph:
+                        st.graphviz_chart(graph)
+                    else:
+                        st.info("🖼️ Graph visualization requires Graphviz package. Please install with `pip install graphviz` and ensure Graphviz software is installed.")
+                    
+                    # Display transition table
+                    st.markdown("#### Transition Table")
+                    
+                    # Create a table of transitions
+                    alphabet_with_epsilon = list(nfa_visual["alphabet"]) + ["ε (epsilon)"]
+                    
+                    # Create header row
+                    table_header = ["State"] + alphabet_with_epsilon + ["Accept State?"]
+                    table_rows = []
+                    
+                    # Create rows for each state
+                    for state in sorted(nfa_visual["states"]):
+                        row = [f"**{state}**" + (" (start)" if state == nfa_visual["start_state"] else "")]
+                        
+                        # Add columns for each alphabet symbol
+                        for symbol in nfa_visual["alphabet"]:
+                            destinations = nfa_visual["transitions"].get(state, {}).get(symbol, [])
+                            row.append(", ".join(sorted(destinations)) if destinations else "∅")
+                        
+                        # Add epsilon transitions
+                        epsilon_destinations = nfa_visual["transitions"].get(state, {}).get("", [])
+                        row.append(", ".join(sorted(epsilon_destinations)) if epsilon_destinations else "∅")
+                        
+                        # Is it an accept state?
+                        row.append("✓" if state in nfa_visual["accept_states"] else "✗")
+                        
+                        table_rows.append(row)
+                    
+                    # Convert to markdown table
+                    table_md = "| " + " | ".join(table_header) + " |\n"
+                    table_md += "| " + " | ".join(["---"] * len(table_header)) + " |\n"
+                    
+                    for row in table_rows:
+                        table_md += "| " + " | ".join(map(str, row)) + " |\n"
+                    
+                    st.markdown(table_md)
+                    
+                    # Visualize state transitions in text format
+                    st.markdown("#### Transition Details")
+                    
+                    transition_details = []
+                    for src in sorted(nfa_visual["transitions"].keys()):
+                        for symbol, destinations in nfa_visual["transitions"][src].items():
+                            symbol_display = "ε" if symbol == "" else symbol
+                            for dest in sorted(destinations):
+                                transition_details.append(f"{src} --({symbol_display})--> {dest}")
+                    
+                    # Display in columns for better readability
+                    cols = st.columns(2)
+                    half = len(transition_details) // 2 + len(transition_details) % 2
+                    cols[0].markdown("  \n".join(transition_details[:half]))
+                    cols[1].markdown("  \n".join(transition_details[half:]))
+                
+                # Display NFA as JSON
+                with st.expander("🔧 **NFA Raw Data**"):
+                    st.json(nfa_visual)
                         
         except Exception as e:
             st.error(f"❌ **Regex parsing failed:** {e}")
+            st.exception(e)
 
 def dfa_equivalence_tab():
     st.markdown('<div class="logo-container">⚖️</div>', unsafe_allow_html=True)

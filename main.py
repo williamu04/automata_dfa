@@ -152,6 +152,32 @@ class DFA:
                     queue.append((t1, t2))
         return True
 
+    def get_visual_representation(self):
+        """
+        🎨 Get visual representation of the DFA for display
+        
+        Returns:
+            dict: Dictionary containing DFA structure for visualization
+        """
+        # Create visualization structure
+        dfa_visualization = {
+            "states": list(self.states),
+            "alphabet": list(self.alphabet),
+            "start_state": self.start_state,
+            "accept_states": list(self.accept_states),
+            "transitions": self.transitions,
+            # Additional metadata for visualization
+            "num_states": len(self.states),
+            "num_accept_states": len(self.accept_states),
+            "is_complete": all(
+                symbol in self.transitions.get(state, {})
+                for state in self.states
+                for symbol in self.alphabet
+            )
+        }
+        
+        return dfa_visualization
+
 # ===============================================================
 # 🎲 NON-DETERMINISTIC FINITE AUTOMATA (NFA) CLASS  
 # ===============================================================
@@ -214,6 +240,43 @@ class NFA:
                 next_states.update(self.transitions[state].get(symbol, []))
             current_states = epsilon_closure(next_states)
         return bool(self.accept_states & current_states)
+        
+    def get_visual_representation(self):
+        """
+        🎨 Get visual representation of the NFA for display
+        
+        Returns:
+            dict: Dictionary containing NFA structure for visualization
+        """
+        # Convert the defaultdict to a regular dict for JSON serialization
+        transitions_dict = {}
+        for src in self.transitions:
+            transitions_dict[src] = {}
+            for symbol, destinations in self.transitions[src].items():
+                # Convert sets to lists for JSON serialization
+                transitions_dict[src][symbol] = list(destinations)
+        
+        # Get all unique symbols used in transitions (alphabet)
+        alphabet = set()
+        for src in self.transitions:
+            for symbol in self.transitions[src]:
+                if symbol != "":  # Skip epsilon
+                    alphabet.add(symbol)
+        
+        # Create visualization structure
+        nfa_visualization = {
+            "states": list(self.states),
+            "alphabet": list(alphabet),
+            "start_state": self.start_state,
+            "accept_states": list(self.accept_states),
+            "transitions": transitions_dict,
+            # Additional metadata for visualization
+            "num_states": len(self.states),
+            "has_epsilon": any(symbol == "" for src in self.transitions 
+                               for symbol in self.transitions[src])
+        }
+        
+        return nfa_visualization
 
 # ===============================================================
 # 🔤 REGULAR EXPRESSION TO NFA CONVERSION
@@ -235,81 +298,193 @@ def regex_to_nfa(regex):
     Returns:
         NFA: Equivalent non-deterministic finite automaton
     """
-    state_id = [0]
-
-    def new_state():
-        sid = "q" + str(state_id[0])
-        state_id[0] += 1
-        return sid
-
-    def parse_regex(expr, pos=0):
+    state_counter = 0
+    
+    def get_new_state():
+        nonlocal state_counter
+        state = f"q{state_counter}"
+        state_counter += 1
+        return state
+    
+    def char_nfa(c):
+        """Create NFA for a single character"""
         nfa = NFA()
-        start = new_state()
-        end = new_state()
+        start = get_new_state()
+        end = get_new_state()
+        
         nfa.start_state = start
         nfa.accept_states = {end}
-        current_states = {start}
-
-        while pos < len(expr):
-            char = expr[pos]
-            if char in {"a", "b"}:
-                # Handle single character
-                dest = new_state()
-                for s in current_states:
-                    nfa.add_transition(s, char, dest)
-                current_states = {dest}
-                pos += 1
-            elif char == "(":
-                # Find matching parenthesis
-                depth = 1
-                sub_pos = pos + 1
-                while sub_pos < len(expr) and depth > 0:
-                    if expr[sub_pos] == "(": depth += 1
-                    elif expr[sub_pos] == ")": depth -= 1
-                    sub_pos += 1
-                if depth != 0:
-                    raise ValueError("Unmatched parenthesis")
-                # Parse subexpression
-                sub_nfa = parse_regex(expr[pos + 1:sub_pos - 1])[0]
-                for s in current_states:
-                    nfa.add_transition(s, "", sub_nfa.start_state)
-                nfa.transitions.update(sub_nfa.transitions)
-                current_states = sub_nfa.accept_states
-                pos = sub_pos
-            elif char == "*":
-                # Apply Kleene star to previous NFA
-                if not current_states:
-                    raise ValueError("Invalid Kleene star: no preceding expression")
-                prev_start = nfa.start_state
-                prev_end = new_state()
-                nfa.accept_states = {prev_end}
-                for s in current_states:
-                    nfa.add_transition(s, "", prev_start)
-                    nfa.add_transition(s, "", prev_end)
-                nfa.add_transition(prev_start, "", prev_end)
-                current_states = {prev_end}
-                pos += 1
-            elif char == "|":
-                # Handle union
-                right_nfa, new_pos = parse_regex(expr, pos + 1)
-                nfa.transitions.update(right_nfa.transitions)
-                nfa.add_transition(nfa.start_state, "", right_nfa.start_state)
-                for s in right_nfa.accept_states:
-                    nfa.add_transition(s, "", end)
-                nfa.accept_states = {end}
-                return nfa, new_pos
-            else:
-                raise ValueError(f"Invalid character at position {pos}: {char}")
-        nfa.accept_states = current_states
-        return nfa, pos
-
-    try:
-        nfa, _ = parse_regex(regex)
-        if not nfa.start_state:
-            raise ValueError("Invalid regex: no start state defined")        
+        nfa.add_transition(start, c, end)
+        
         return nfa
-    except ValueError as e:
-        raise ValueError(f"Regex parsing error: {str(e)}")
+    
+    def union_nfa(nfa1, nfa2):
+        """Create NFA for union of two NFAs"""
+        result = NFA()
+        start = get_new_state()
+        end = get_new_state()
+        
+        result.start_state = start
+        result.accept_states = {end}
+        
+        # Connect start to both NFAs
+        result.add_transition(start, "", nfa1.start_state)
+        result.add_transition(start, "", nfa2.start_state)
+        
+        # Connect both NFAs to end
+        for state in nfa1.accept_states:
+            result.add_transition(state, "", end)
+        for state in nfa2.accept_states:
+            result.add_transition(state, "", end)
+            
+        # Copy all transitions
+        for src in nfa1.transitions:
+            for symbol, destinations in nfa1.transitions[src].items():
+                for dest in destinations:
+                    result.add_transition(src, symbol, dest)
+                    
+        for src in nfa2.transitions:
+            for symbol, destinations in nfa2.transitions[src].items():
+                for dest in destinations:
+                    result.add_transition(src, symbol, dest)
+        
+        return result
+    
+    def concat_nfa(nfa1, nfa2):
+        """Create NFA for concatenation of two NFAs"""
+        result = NFA()
+        result.start_state = nfa1.start_state
+        result.accept_states = nfa2.accept_states
+        
+        # Copy all transitions from nfa1
+        for src in nfa1.transitions:
+            for symbol, destinations in nfa1.transitions[src].items():
+                for dest in destinations:
+                    result.add_transition(src, symbol, dest)
+        
+        # Copy all transitions from nfa2
+        for src in nfa2.transitions:
+            for symbol, destinations in nfa2.transitions[src].items():
+                for dest in destinations:
+                    result.add_transition(src, symbol, dest)
+        
+        # Connect accept states of nfa1 to start state of nfa2
+        for state in nfa1.accept_states:
+            result.add_transition(state, "", nfa2.start_state)
+        
+        return result
+    
+    def star_nfa(nfa):
+        """Create NFA for Kleene star of an NFA"""
+        result = NFA()
+        start = get_new_state()
+        end = get_new_state()
+        
+        result.start_state = start
+        result.accept_states = {end}
+        
+        # Connect start to end (empty string case)
+        result.add_transition(start, "", end)
+        
+        # Connect start to original NFA
+        result.add_transition(start, "", nfa.start_state)
+        
+        # Copy all transitions from original NFA
+        for src in nfa.transitions:
+            for symbol, destinations in nfa.transitions[src].items():
+                for dest in destinations:
+                    result.add_transition(src, symbol, dest)
+        
+        # Connect accept states back to start state of original NFA
+        for state in nfa.accept_states:
+            result.add_transition(state, "", nfa.start_state)
+            # Connect accept states to end
+            result.add_transition(state, "", end)
+        
+        return result
+    
+    def parse(regex_str):
+        """Parse regex recursively using Thompson's construction"""
+        if not regex_str:
+            # Empty regex
+            nfa = NFA()
+            start = get_new_state()
+            nfa.start_state = start
+            nfa.accept_states = {start}
+            return nfa
+            
+        # Try to find a union operation at the top level
+        parenthesis_depth = 0
+        for i in range(len(regex_str)):
+            if regex_str[i] == '(':
+                parenthesis_depth += 1
+            elif regex_str[i] == ')':
+                parenthesis_depth -= 1
+            elif regex_str[i] == '|' and parenthesis_depth == 0:
+                # Found a top-level union
+                left = parse(regex_str[:i])
+                right = parse(regex_str[i+1:])
+                return union_nfa(left, right)
+        
+        # No top-level union, try to parse as concatenation
+        if len(regex_str) > 1:
+            # Check the first character and if it's followed by a star
+            if len(regex_str) > 1 and regex_str[1] == '*' and regex_str[0] != '(':
+                # Single char followed by star
+                char_nfa_obj = char_nfa(regex_str[0])
+                star_nfa_obj = star_nfa(char_nfa_obj)
+                
+                if len(regex_str) > 2:
+                    # More to parse after the star
+                    rest = parse(regex_str[2:])
+                    return concat_nfa(star_nfa_obj, rest)
+                else:
+                    return star_nfa_obj
+            
+            # Check if it starts with a group
+            elif regex_str[0] == '(':
+                # Find the matching closing parenthesis
+                depth = 1
+                closing_index = 1
+                while depth > 0 and closing_index < len(regex_str):
+                    if regex_str[closing_index] == '(':
+                        depth += 1
+                    elif regex_str[closing_index] == ')':
+                        depth -= 1
+                    closing_index += 1
+                
+                if depth != 0:
+                    raise ValueError(f"Unmatched parenthesis in regex: {regex_str}")
+                
+                # Parse the group
+                group_content = regex_str[1:closing_index-1]
+                group_nfa = parse(group_content)
+                
+                # Check if group is followed by star
+                if closing_index < len(regex_str) and regex_str[closing_index] == '*':
+                    group_nfa = star_nfa(group_nfa)
+                    closing_index += 1
+                
+                # If there's more after the group, concatenate
+                if closing_index < len(regex_str):
+                    rest = parse(regex_str[closing_index:])
+                    return concat_nfa(group_nfa, rest)
+                else:
+                    return group_nfa
+            
+            else:
+                # Simple concatenation of first char and the rest
+                first = char_nfa(regex_str[0])
+                rest = parse(regex_str[1:])
+                return concat_nfa(first, rest)
+        
+        # Single character
+        return char_nfa(regex_str[0])
+    
+    try:
+        return parse(regex)
+    except Exception as e:
+        raise ValueError(f"Failed to parse regex: {str(e)}")
 
 # ===============================================================
 # 🎉 END OF AUTOMATA THEORY TOOLKIT CORE MODULES
