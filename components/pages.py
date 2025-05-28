@@ -4,9 +4,9 @@
 Modular page components with Tailwind styling
 """
 
+import engines.DFA as DFA
 import streamlit as st
-import json
-from main import DFA, regex_to_nfa
+from engines.REGEX import regex_to_nfa
 from components.ui_components import TailwindComponents
 
 class Pages:

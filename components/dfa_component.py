@@ -5,7 +5,7 @@
 
 import streamlit as st
 import json
-from main import DFA
+from engines.REGEX import DFA
 from components.ui_components import TailwindComponents
 
 class DFAComponent:
