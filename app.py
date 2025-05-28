@@ -148,6 +148,26 @@ def visualize_dfa(dfa_visual):
     
     return graph
 
+def render_dfa_transition_table(dfa_visual):
+    table_header = ["State"] + sorted(dfa_visual["alphabet"]) + ["Accept State?"]
+    table_rows = []
+
+    for state in sorted(dfa_visual["states"]):
+        row = [f"**{state}**" + (" (start)" if state == dfa_visual["start_state"] else "")]
+        for symbol in sorted(dfa_visual["alphabet"]):
+            dest = dfa_visual["transitions"].get(state, {}).get(symbol, "∅")
+            row.append(dest)
+        row.append("✓" if state in dfa_visual["accept_states"] else "✗")
+        table_rows.append(row)
+
+    # Convert to markdown table
+    table_md = "| " + " | ".join(table_header) + " |\n"
+    table_md += "| " + " | ".join(["---"] * len(table_header)) + " |\n"
+    for row in table_rows:
+        table_md += "| " + " | ".join(map(str, row)) + " |\n"
+
+    st.markdown(table_md)
+
 # ===================== HEADER & LOGO =====================
 def show_header():
     st.markdown('<div class="logo-container">🤖⚡🔬</div>', unsafe_allow_html=True)
@@ -352,33 +372,7 @@ def dfa_simulator_tab():
             
             # Display transition table
             st.markdown("#### Transition Table")
-            
-            # Create header row with state and all alphabet symbols
-            table_header = ["State"] + list(dfa_visual["alphabet"]) + ["Accept State?"]
-            table_rows = []
-            
-            # Create rows for each state
-            for state in sorted(dfa_visual["states"]):
-                row = [f"**{state}**" + (" (start)" if state == dfa_visual["start_state"] else "")]
-                
-                # Add columns for each alphabet symbol
-                for symbol in sorted(dfa_visual["alphabet"]):
-                    dest_state = dfa_visual["transitions"].get(state, {}).get(symbol, "∅")
-                    row.append(dest_state)
-                
-                # Is it an accept state?
-                row.append("✓" if state in dfa_visual["accept_states"] else "✗")
-                
-                table_rows.append(row)
-            
-            # Convert to markdown table
-            table_md = "| " + " | ".join(table_header) + " |\n"
-            table_md += "| " + " | ".join(["---"] * len(table_header)) + " |\n"
-            
-            for row in table_rows:
-                table_md += "| " + " | ".join(map(str, row)) + " |\n"
-            
-            st.markdown(table_md)
+            render_dfa_transition_table(dfa_visual)
     
     if test_button and dfa and test_string is not None:
         with st.spinner('🔄 Running DFA simulation...'):
@@ -410,26 +404,50 @@ def dfa_minimizer_tab():
     if minimize_button and dfa:
         with st.spinner('🔄 Minimizing DFA...'):
             minimized = dfa.minimize()
-            
+
+            st.markdown("## 🎯 Result Comparison")
+            vis1 = dfa.get_visual_representation()
+            vis2 = minimized.get_visual_representation()
+
             col1, col2 = st.columns(2)
+
             with col1:
-                st.markdown("### 📉 **Minimized DFA Result**")
-                st.json({
+                st.markdown("### 🧾 Original DFA")
+                st.metric("States", len(dfa.states))
+                st.metric("Accept States", len(dfa.accept_states))
+                graph1 = visualize_dfa(vis1)
+                if graph1:
+                    st.graphviz_chart(graph1)
+                else:
+                    st.info("Graphviz not available for Original DFA.")
+
+            with col2:
+                st.markdown("### ✨ Minimized DFA")
+                st.metric("States", len(minimized.states))
+                st.metric("Accept States", len(minimized.accept_states))
+                graph2 = visualize_dfa(vis2)
+                if graph2:
+                    st.graphviz_chart(graph2)
+                    st.json({
                     "states": list(minimized.states),
                     "start_state": minimized.start_state,
                     "accept_states": list(minimized.accept_states),
                     "transitions": minimized.transitions
                 })
-            
-            with col2:
-                st.markdown("### 📈 **Optimization Stats**")
-                original_states = len(dfa.states)
-                minimized_states = len(minimized.states)
-                reduction = ((original_states - minimized_states) / original_states * 100) if original_states > 0 else 0
-                
-                st.metric("Original States", original_states)
-                st.metric("Minimized States", minimized_states)
-                st.metric("Reduction", f"{reduction:.1f}%", f"-{original_states - minimized_states}")
+                else:
+                    st.info("Graphviz not available for Minimized DFA.")
+
+            st.markdown("---")
+            st.markdown("### 📈 Optimization Summary")
+            original_states = len(dfa.states)
+            minimized_states = len(minimized.states)
+            reduction = ((original_states - minimized_states) / original_states * 100) if original_states > 0 else 0
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Original States", original_states)
+            col2.metric("Minimized States", minimized_states)
+            col3.metric("Reduction", f"{reduction:.1f}%", f"-{original_states - minimized_states}")
+
 
 def regex_to_nfa_tab():
     st.markdown('<div class="logo-container">🔤</div>', unsafe_allow_html=True)
@@ -569,11 +587,11 @@ def dfa_equivalence_tab():
 
     st.markdown("### 🤖 Configure First DFA")
     dfa1 = input_dfa(index=1)
-    
+
     st.markdown("---")
     st.markdown("### 🤖 Configure Second DFA") 
     dfa2 = input_dfa(index=2)
-    
+
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -583,7 +601,7 @@ def dfa_equivalence_tab():
     if compare_button and dfa1 and dfa2:
         with st.spinner('🔄 Comparing DFAs for equivalence...'):
             equivalent = dfa1.is_equivalent(dfa2)
-            
+
             if equivalent:
                 st.balloons()
                 st.success("🎉 **EQUIVALENT!** Both DFAs accept the same language")
@@ -601,6 +619,45 @@ def dfa_equivalence_tab():
                     <p>The two DFAs recognize different sets of strings.</p>
                 </div>
                 """, unsafe_allow_html=True)
+
+            # --- Visualisasi kedua DFA ---
+            st.markdown("### 🧭 Visual Comparison of Both DFAs")
+
+            vis1 = dfa1.get_visual_representation()
+            vis2 = dfa2.get_visual_representation()
+
+            col_left, col_right = st.columns(2)
+
+            with col_left:
+                st.markdown("#### 🅰️ DFA 1")
+                st.metric("Total States", vis1["num_states"])
+                st.metric("Accept States", len(vis1["accept_states"]))
+                st.metric("Complete DFA", "Yes" if vis1["is_complete"] else "No")
+
+                graph1 = visualize_dfa(vis1)
+                if graph1:
+                    st.graphviz_chart(graph1)
+                else:
+                    st.info("Graphviz not available for DFA 1.")
+
+                st.markdown("##### 🔄 Transition Table DFA 1")
+                render_dfa_transition_table(vis1)
+
+            with col_right:
+                st.markdown("#### 🅱️ DFA 2")
+                st.metric("Total States", vis2["num_states"])
+                st.metric("Accept States", len(vis2["accept_states"]))
+                st.metric("Complete DFA", "Yes" if vis2["is_complete"] else "No")
+
+                graph2 = visualize_dfa(vis2)
+                if graph2:
+                    st.graphviz_chart(graph2)
+                else:
+                    st.info("Graphviz not available for DFA 2.")
+
+                st.markdown("##### 🔄 Transition Table DFA 2")
+                render_dfa_transition_table(vis2)
+
 
 # ===================== MAIN APPLICATION =====================
 def main():
