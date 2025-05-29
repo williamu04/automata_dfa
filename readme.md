@@ -32,7 +32,7 @@
 | No  | Nama                         | NIM       | Role                    | GitHub                                         | Email                                  |
 | --- | ---------------------------- | --------- | ----------------------- | ---------------------------------------------- | -------------------------------------- |
 | 1️⃣  | **Dunhill William Putra**    | L0123045  | Algorithm & Deployment  | [@williamu04](https://github.com/williamu04)   | author1@email.com                      |
-| 2️⃣  | ** Dylansius Putra Prasetio  ** | L0123046  | Testing & Documentation | [@Dylansius11](https://github.com/Dylansius11) | author2@email.com                      |
+| 2️⃣  | ** Dylansius Putra Prasetio  ** | L0123046  | Testing & Documentation | [@Dylansius11](https://github.com/Dylansius11) | dylansius11@student.uns.ac.id                       |
 | 3️⃣  | **Farras Arkan Wardana**     | L0123052  | Documentation           | [@kzmsnj](https://github.com/kzmsnj)           | farrasarkanwardana69@student.uns.ac.id |
 | 4️⃣  | **Havizhan Rhaiya Ardhana**  | 123456792 | Testing & Documentation | [@author4](https://github.com/Havizhan)        | havizhanrhaiya@student.uns.ac.id       |
 | 5️⃣  | **Ivan Wahyu Nugroho**       | L0123068  | Front End & Testing     | [@ifwhy](https://github.com/ifwhy)             | ifanugrh02@student.uns.ac.id           |
