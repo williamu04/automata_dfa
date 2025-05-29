@@ -117,8 +117,8 @@ def authors_page():
             "avatar": "🧑‍💻",
         },
         {
-            "name": "Nama Author 2", 
-            "nim": "123456790",
+            "name": "Havizhan Rhaiya Ardhana", 
+            "nim": "L0123063",
             "role": "🎨 Frontend Dev & UI/UX",
             "github": "author2",
             "email": "author2@email.com", 
@@ -133,8 +133,8 @@ def authors_page():
             "avatar": "🧑‍🔬",
         },
         {
-            "name": "Havizhan Rhaiya Ardhana",
-            "nim": "L0123063",
+            "name": "Farras Arkan Wardana",
+            "nim": "L0123052",
             "role": "🧪 Testing & Documentation", 
             "github": "Havizhan",
             "email": "havizhanrhaiya@student.uns.ac.id",
